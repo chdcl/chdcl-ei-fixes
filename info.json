@@ -1,0 +1,12 @@
+{
+  "name": "chdcl-ei-tweaks",
+  "version": "0.1.0",
+  "title": "Exotic Industries Tweaks",
+  "author": "chdcl",
+  "factorio_version": "1.1",
+  "dependencies": [
+    "base >= 1.1",
+    "exotic-industries >= 0.5.9"
+  ],
+  "description": "Minor tweaks to Exotic Industries"
+}

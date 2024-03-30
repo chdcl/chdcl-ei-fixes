@@ -1,0 +1,16 @@
+{
+    "recipe":
+    [
+        ["iron-plate:metalworks", "iron-plate"],
+        ["copper-plate:metalworks", "copper-plate"],
+        ["ei_gold-plate:metalworks", "ei_gold-plate"],
+        ["ei_lead-plate:metalworks", "ei_lead-plate"],
+        ["ei_iron-beam:metalworks", "ei_iron-beam"],
+        ["ei_copper-beam:metalworks", "ei_copper-beam"],
+        ["ei_steel-beam:metalworks", "ei_steel-beam"],
+        ["ei_iron-mechanical-parts:metalworks", "ei_iron-mechanical-parts"],
+        ["ei_copper-mechanical-parts:metalworks", "ei_copper-mechanical-parts"],
+        ["ei_steel-mechanical-parts:metalworks", "ei_steel-mechanical-parts"],
+        ["copper-cable:metalworks", "copper-cable"]
+    ]
+  }
