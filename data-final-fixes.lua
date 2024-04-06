@@ -2,7 +2,13 @@ if not mods["exotic-industries"] then
    return
 end
 
-log("test")
+local DEBUG = 1
+local function log_(text) 
+   if DEBUG then
+      log(text)      
+   end
+end
+
 -- Give metalworks the same module slots assertion assembling machines
 local function fix_metalworks_modules(tier, n_slots) 
    local machine = data.raw["assembling-machine"]["ei_metalworks_" .. tier]
@@ -10,7 +16,7 @@ local function fix_metalworks_modules(tier, n_slots)
    machine.module_specification = {
       module_slots = n_slots
    }
-   log("added module slots to tier " .. tier)
+   log_("Added module slots to tier " .. tier .. " metalworks")
 end
 fix_metalworks_modules(2, 2)
 fix_metalworks_modules(3, 4)
@@ -29,7 +35,7 @@ local function enable_metalworks(machine)
    for _, machine in pairs(data.raw[machine]) do
       for _, category in ipairs(machine.crafting_categories) do
          if category == "crafting" then
-            log("Add " .. metalworks_category .. " to " .. machine.name)
+            log_("Add " .. metalworks_category .. " to " .. machine.name)
             table.insert(machine.crafting_categories, metalworks_category)
             break
          end
@@ -41,11 +47,14 @@ enable_metalworks("assembling-machine")
 enable_metalworks("character")
 
 local function remove_recipes(pattern) 
-   log("Removing recipes matching pattern " .. pattern)
+   log_("Removing recipes matching pattern " .. pattern)
+   -- Escape magic characters that are valid in recipe names
+   pattern = string.gsub(pattern, "%-", "%%-")
+
    -- Set value to nil to remove recipe from existence
    for k, recipe in pairs(data.raw["recipe"]) do
       if string.match(recipe.name, pattern) then
-         log("Removed recipe " .. recipe.name)
+         log_("Removed recipe " .. recipe.name)
          data.raw["recipe"][k] = nil
       end
    end
@@ -81,7 +90,7 @@ for _, recipe in pairs(data.raw["recipe"]) do
    for _, recipe_to_modify in pairs(recipes_to_modify) do
       if recipe.name == recipe_to_modify then
          recipe.category = metalworks_category
-         log("Changed crafting category of recipe " .. recipe.name .. " to " .. recipe.category)
+         log_("Changed crafting category of recipe " .. recipe.name .. " to " .. recipe.category)
       end
    end
 end
@@ -93,3 +102,66 @@ remove_recipes(metalworks_pattern)
 -- Remove crushing recipes for beams, parts and plates because they are useless bloat
 local crush_pattern = "^ei_crushed-.*:"
 remove_recipes(crush_pattern)
+
+-- Remove molten metal recipes except for pure ore and allow prod for pure ore recipes
+local function allow_prod(recipe_name)
+   log_("Allowing productivity for recipe " .. recipe_name)
+   for _, module in pairs(data.raw["module"]) do
+      if module.category == "productivity" then
+         for _, allowed_recipe in pairs(module.limitation) do
+            if allowed_recipe == recipe_name then
+               return
+            end
+         end
+         table.insert(module.limitation, recipe_name)
+      end
+   end
+end
+
+local molten_pattern = "^ei_molten%-.*:"
+local molten_pure_pattern = ":pure%-ore$"
+local molten_removal_targets = { ":beam$", ":plate$", ":mechanical%-parts$", ":ingot$"}
+for _, recipe in pairs(data.raw["recipe"]) do 
+   if string.match(recipe.name, molten_pattern) then
+      if string.match(recipe.name, molten_pure_pattern) then
+         -- Allow productivity for turning pure ore into molten metal
+         -- Otherwise there is no productivity step for the molten metal chain, unlike directly
+         -- smelting pure ores which allows productivity 
+         allow_prod(recipe.name)
+      else
+         for _, removal_target in pairs(molten_removal_targets) do
+            if string.match(recipe.name, removal_target) then
+               -- Remove recipes that turn beams / plates / parts into molten metal
+               remove_recipes(recipe.name)
+            end
+         end
+      end
+   end
+end
+
+-- Remove ei_bio-chamber tag from excavator 
+local excavator = data.raw["assembling-machine"]["ei_excavator"]
+if excavator then
+   for i, category in ipairs(excavator.crafting_categories) do
+      if category == "ei_bio-chamber" then
+         table.remove(excavator.crafting_categories, i)
+      end
+   end
+end
+
+-- Fix mining time of neo belts (default is 2x as long as normal belts)
+local targets = {
+   {"transport-belt", "ei_neo-belt"}, 
+   {"underground-belt", "ei_neo-underground-belt"},
+   {"splitter", "ei_neo-splitter"}
+}
+for _, target in pairs(targets) do
+   local type, name = table.unpack(target)
+   local entity = data.raw[type][name]
+   if entity then
+      entity.minable.mining_time = 0.1
+      log_("Fixed mining time of " .. name)
+   else
+      log_("Warn: did not find entity with name " .. name)
+   end
+end
