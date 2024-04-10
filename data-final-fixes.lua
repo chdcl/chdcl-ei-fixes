@@ -139,6 +139,16 @@ for _, recipe in pairs(data.raw["recipe"]) do
    end
 end
 
+-- Allow productivity module in arc furnace and plasma heater
+local molten_furnaces = {"ei_arc-furnace", "ei_plasma-heater"}
+for _, furnace_name in pairs(molten_furnaces) do
+   local furnace = data.raw["furnace"][furnace_name]
+   if furnace then
+      table.insert(furnace.allowed_effects, "productivity")
+      log_("Allowed productivity in furnace " .. furnace.name)
+   end
+end
+
 -- Remove ei_bio-chamber tag from excavator 
 local excavator = data.raw["assembling-machine"]["ei_excavator"]
 if excavator then
@@ -165,3 +175,4 @@ for _, target in pairs(targets) do
       log_("Warn: did not find entity with name " .. name)
    end
 end
+
