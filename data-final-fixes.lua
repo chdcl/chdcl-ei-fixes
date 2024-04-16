@@ -176,3 +176,24 @@ for _, target in pairs(targets) do
    end
 end
 
+
+-- Make induction matrix blueprintable instead of having to manually place them
+-- like an actual caveman 
+local matrix_core_pattern = "^ei_induction%-matrix%-core:"
+for _, entity in pairs(data.raw["electric-energy-interface"]) do
+   if string.match(entity.name, matrix_core_pattern) then
+      -- Remove not-blueprintable flag, this allows building of induction matrix ghosts
+      for k, flag in pairs(entity.flags) do
+         if flag == "not-blueprintable" then
+            entity.flags[k] = nil
+         end
+      end
+      -- EI dynamically creates 17 entity variations of the matrix core
+      -- register them as being placeable by the base item
+      entity.placeable_by = {
+         item = "ei_induction-matrix-core",
+         count = 1
+      }
+      log_("Fixed matrix core " .. entity.name)
+   end
+end
